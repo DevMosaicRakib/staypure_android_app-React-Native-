@@ -3,57 +3,42 @@ name: Build and Upload APK
 on:
   push:
     branches:
-      - main  # Change this if your main branch has a different name
+      - main  # Change this if you're using another branch
 
 jobs:
-  build-apk:
-    name: Build Android APK
+  build:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v18
         with:
           node-version: 18
 
       - name: Install Dependencies
         run: npm install
 
-      - name: Install Java and Gradle
-        run: |
-          sudo apt update
-          sudo apt install openjdk-17-jdk -y
-          echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
-          echo "export PATH=$JAVA_HOME/bin:$PATH" >> $GITHUB_ENV
-
-      - name: Install Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Grant execute permission to Gradlew
-        run: chmod +x android/gradlew
-
       - name: Build APK
-        run: cd android && ./gradlew assembleRelease
-
-      - name: Move APK to Artifact Directory
         run: |
-          mkdir -p release-apk
-          mv android/app/build/outputs/apk/release/app-release.apk release-apk/app-release.apk
+          cd android
+          ./gradlew assembleRelease
 
-      - name: Upload APK as Artifact
-        uses: actions/upload-artifact@v4
+      - name: Move APK to Release Folder
+        run: mkdir -p release-apk && mv android/app/build/outputs/apk/release/app-release.apk release-apk/
+
+      # ✅ Set up Google Service Account Key
+      - name: Setup GCP Service Account Key
+        run: |
+          echo '${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}' > $HOME/gcp-key.json
+          export GOOGLE_APPLICATION_CREDENTIALS="$HOME/gcp-key.json"
+
+      - name: Upload APK to Google Drive
+        uses: w9jds/google-drive-upload-action@v3
         with:
-          name: APK
-          path: release-apk/app-release.apk
-
-      - name: Commit and Push APK to Repo
-        run: |
-          git config --global user.name "DevMosaicRakib"
-          git config --global user.email "devmosaic17@gmail.com"
-          git add release-apk/app-release.apk
-          git commit -m "Automated APK build: $(date +'%Y-%m-%d %H:%M:%S')" || echo "No changes to commit"
-          git push https://x-access-token:${{ secrets.GH_PAT }}@github.com/DevMosaicRakib/staypure_android_app-React-Native-.git main
-
+          credentials: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+          folderId: "1j8GtAU1FXNztsn-KYm4toKTjsFb1Ifr7"
+          name: "StayPure.apk"
+          path: "release-apk/app-release.apk"
