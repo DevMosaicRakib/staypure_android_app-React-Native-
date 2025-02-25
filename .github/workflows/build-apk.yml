@@ -26,8 +26,16 @@ jobs:
           cd android
           ./gradlew assembleRelease
 
-      - name: Move APK to Release Folder
-        run: mkdir -p release-apk && mv android/app/build/outputs/apk/release/staypure.apk release-apk/
+      - name: Move APK to Artifact Directory
+        run: |
+          mkdir -p release-apk
+          mv android/app/build/outputs/apk/release/app-release.apk release-apk/staypure.apk
+
+      - name: Upload APK as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: APK
+          path: release-apk/staypure.apk
 
       # ✅ Install gdrive CLI tool
       - name: Install gdrive
@@ -44,7 +52,12 @@ jobs:
           echo '${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}' > $HOME/gcp-key.json
           export GOOGLE_APPLICATION_CREDENTIALS="$HOME/gcp-key.json"
 
-      # ✅ Upload APK to Google Drive using gdrive
+      # ✅ Pre-authenticate Google Drive (Important!)
+      - name: Authenticate gdrive
+        run: |
+          gdrive about || echo "gdrive authentication failed"
+
+      # ✅ Upload APK to Google Drive
       - name: Upload APK to Google Drive
         run: |
           gdrive upload --parent 1j8GtAU1FXNztsn-KYm4toKTjsFb1Ifr7 release-apk/staypure.apk
