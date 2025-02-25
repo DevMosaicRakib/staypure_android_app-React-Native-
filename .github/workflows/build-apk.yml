@@ -29,16 +29,22 @@ jobs:
       - name: Move APK to Release Folder
         run: mkdir -p release-apk && mv android/app/build/outputs/apk/release/app-release.apk release-apk/
 
-      # ✅ Set up Google Service Account Key
+      # ✅ Install gdrive CLI tool
+      - name: Install gdrive
+        run: |
+          sudo apt update
+          sudo apt install -y curl
+          curl -O https://raw.githubusercontent.com/glotlabs/gdrive/master/gdrive
+          chmod +x gdrive
+          sudo mv gdrive /usr/local/bin/
+
+      # ✅ Authenticate with Google Drive using Service Account
       - name: Setup GCP Service Account Key
         run: |
           echo '${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}' > $HOME/gcp-key.json
           export GOOGLE_APPLICATION_CREDENTIALS="$HOME/gcp-key.json"
 
+      # ✅ Upload APK to Google Drive using gdrive
       - name: Upload APK to Google Drive
-        uses: w9jds/google-drive-upload-action@v3
-        with:
-          credentials: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
-          folderId: "1j8GtAU1FXNztsn-KYm4toKTjsFb1Ifr7"
-          name: "StayPure.apk"
-          path: "release-apk/app-release.apk"
+        run: |
+          gdrive upload --parent 1j8GtAU1FXNztsn-KYm4toKTjsFb1Ifr7 release-apk/app-release.apk
