@@ -27,7 +27,7 @@ jobs:
           ./gradlew assembleRelease
 
       - name: Move APK to Release Folder
-        run: mkdir -p release-apk && mv android/app/build/outputs/apk/release/app-release.apk release-apk/
+        run: mkdir -p release-apk && mv android/app/build/outputs/apk/release/staypure.apk release-apk/
 
       # ✅ Install gdrive CLI tool
       - name: Install gdrive
@@ -47,4 +47,4 @@ jobs:
       # ✅ Upload APK to Google Drive using gdrive
       - name: Upload APK to Google Drive
         run: |
-          gdrive upload --parent 1j8GtAU1FXNztsn-KYm4toKTjsFb1Ifr7 release-apk/app-release.apk
+          gdrive upload --parent 1j8GtAU1FXNztsn-KYm4toKTjsFb1Ifr7 release-apk/staypure.apk
